@@ -1,18 +1,17 @@
-FROM python:3.9-slim
+FROM python:3.12-slim
+# Запускаем приложение
+CMD ["python", "main.py"]
 
 WORKDIR /app
 
 # Копируем зависимости
-COPY requirements.txt .
+COPY requirements.txt /app/
 
 # Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
 # Копируем исходный код
 COPY src/ .
 
 # Открываем порт
-EXPOSE 8000
-
-# Запускаем приложение
-CMD ["python", "main.py"]
+EXPOSE 8080
