@@ -36,4 +36,3 @@ class TextSummarizationModel():
         super().__init__(name, version, cost_per_request)
         self._max_input_length = max_input_length
         self._supported_languages = supported_languages
-
