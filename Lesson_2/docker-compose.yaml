@@ -1,0 +1,67 @@
+version: "3.8"
+services: 
+  app:
+    build: ./app/
+    image: event-planner-api:latest
+    container_name: event-planner-api
+    restart: unless-stopped
+    env_file:
+    - ./app/.env
+    volumes:
+      - ./app:/app
+    networks:
+      - event-planner-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  web:
+    image: nginx:latest
+    container_name: event-planner-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      # - ./nginx/ssl:/etc/nginx/ssl
+    networks:
+      - event-planner-network
+
+networks:
+  event-planner-network:
+    name: event-planner-network
+    driver: bridge
+
+  web-proxy:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"  
+    volumes:
+      - ./web-proxy/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+    restart: unless-stopped
+
+rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"  # Web UI
+      - "5672:5672"    # AMQP protocol
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq  # Volume для сохранения данных
+    restart: unless-stopped  # Перезагрузка при сбоях
+database:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data  # Volume для сохранения БД
+    restart: unless-stopped
